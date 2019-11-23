@@ -85,18 +85,8 @@ def validate_case_matches_checkpoint(do_lower_case, init_checkpoint):
 
 def preprocess_text(inputs, remove_space=True, lower=False):
   """preprocess data by removing extra space and normalize data."""
-  outputs = inputs
-  if remove_space:
-    outputs = " ".join(inputs.strip().split())
-
-  if six.PY2 and isinstance(outputs, str):
-    try:
-      outputs = six.ensure_text(outputs, "utf-8")
-    except UnicodeDecodeError:
-      outputs = six.ensure_text(outputs, "latin-1")
-
-  outputs = unicodedata.normalize("NFKD", outputs)
-  outputs = "".join([c for c in outputs if not unicodedata.combining(c)])
+  # sinh.luutruong changed for Vietnamese
+  outputs = " ".join(inputs.strip().split())
   if lower:
     outputs = outputs.lower()
 
@@ -113,30 +103,8 @@ def encode_pieces(sp_model, text, return_unicode=True, sample=False):
     pieces = sp_model.EncodeAsPieces(text)
   else:
     pieces = sp_model.SampleEncodeAsPieces(text, 64, 0.1)
-  new_pieces = []
-  for piece in pieces:
-    piece = printable_text(piece)
-    if len(piece) > 1 and piece[-1] == "," and piece[-2].isdigit():
-      cur_pieces = sp_model.EncodeAsPieces(
-          six.ensure_binary(piece[:-1]).replace(SPIECE_UNDERLINE, b""))
-      if piece[0] != SPIECE_UNDERLINE and cur_pieces[0][0] == SPIECE_UNDERLINE:
-        if len(cur_pieces[0]) == 1:
-          cur_pieces = cur_pieces[1:]
-        else:
-          cur_pieces[0] = cur_pieces[0][1:]
-      cur_pieces.append(piece[-1])
-      new_pieces.extend(cur_pieces)
-    else:
-      new_pieces.append(piece)
-
-  # note(zhiliny): convert back to unicode for py2
-  if six.PY2 and return_unicode:
-    ret_pieces = []
-    for piece in new_pieces:
-      if isinstance(piece, str):
-        piece = six.ensure_text(piece, "utf-8")
-      ret_pieces.append(piece)
-    new_pieces = ret_pieces
+  # sinh.luutruong changed
+  new_pieces = pieces
 
   return new_pieces
 
@@ -263,8 +231,11 @@ class FullTokenizer(object):
   def convert_tokens_to_ids(self, tokens):
     if self.sp_model:
       tf.logging.info("using sentence piece tokenzier.")
-      return [self.sp_model.PieceToId(
+      ids = [self.sp_model.PieceToId(
           printable_text(token)) for token in tokens]
+      # print ('tokens: ', tokens)
+      # print ('ids: ', ids)
+      return ids
     else:
       return convert_by_vocab(self.vocab, tokens)
 
