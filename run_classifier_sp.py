@@ -65,6 +65,18 @@ flags.DEFINE_string(
 
 ## Other parameters
 
+# sinh.luutruong start
+flags.DEFINE_string(
+    "train_file_name", "train",
+    "The train file name.")
+flags.DEFINE_string(
+    "dev_file_name", "dev",
+    "The dev file name.")
+flags.DEFINE_string(
+    "test_file_name", "test",
+    "The test file name.")
+# sinh.luutruong end
+
 flags.DEFINE_string(
     "init_checkpoint", None,
     "Initial checkpoint (usually from a pre-trained ALBERT model).")
@@ -311,6 +323,52 @@ class MnliProcessor(DataProcessor):
       examples.append(
           InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
     return examples
+
+# sinh.luutruong start
+class QnliProcessor(DataProcessor):
+  """Processor for the Qnli data set (GLUE version)."""
+
+  def get_train_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+
+  def get_dev_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+
+  def get_test_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
+
+  def get_examples_by_file_name(self, data_dir, file_name):
+    """See base class."""
+    return self._create_examples(
+        self._read_tsv(os.path.join(data_dir, "{}.tsv".format(file_name))), file_name)
+
+  def get_labels(self):
+    """See base class."""
+    return ["entailment", "not_entailment"]
+
+  def _create_examples(self, lines, set_type):
+    """Creates examples for the training and dev sets."""
+    examples = []
+    for (i, line) in enumerate(lines):
+      if i == 0:
+        continue
+      guid = "%s-%s" % (set_type, tokenization.convert_to_unicode(line[0]))
+      text_a = tokenization.convert_to_unicode(line[1])
+      text_b = tokenization.convert_to_unicode(line[2])
+      if set_type == "test":
+        label = "not_entailment"
+      else:
+        label = tokenization.convert_to_unicode(line[-1])
+      examples.append(
+          InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+    return examples
+# sinh.luutruong end
 
 
 class MrpcProcessor(DataProcessor):
@@ -821,6 +879,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
+      "qnli": QnliProcessor, # sinh.luutruong added
   }
 
   tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
@@ -874,7 +933,11 @@ def main(_):
   num_train_steps = None
   num_warmup_steps = None
   if FLAGS.do_train:
-    train_examples = processor.get_train_examples(FLAGS.data_dir)
+    # sinh.luutruong added qnli task
+    if FLAGS.task_name == "qnli":
+        train_examples = processor.get_examples_by_file_name(FLAGS.data_dir, FLAGS.train_file_name)
+    else:
+        train_examples = processor.get_train_examples(FLAGS.data_dir)
     num_train_steps = int(
         len(train_examples) / FLAGS.train_batch_size * FLAGS.num_train_epochs)
     num_warmup_steps = int(num_train_steps * FLAGS.warmup_proportion)
@@ -915,7 +978,11 @@ def main(_):
     estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
 
   if FLAGS.do_eval:
-    eval_examples = processor.get_dev_examples(FLAGS.data_dir)
+    # sinh.luutruong added qnli task
+    if FLAGS.task_name == "qnli":
+        eval_examples = processor.get_examples_by_file_name(FLAGS.data_dir, FLAGS.dev_file_name)
+    else:
+        eval_examples = processor.get_dev_examples(FLAGS.data_dir)
     num_actual_eval_examples = len(eval_examples)
     if FLAGS.use_tpu:
       # TPU requires a fixed batch size for all batches, therefore the number
@@ -961,7 +1028,11 @@ def main(_):
         writer.write("%s = %s\n" % (key, str(result[key])))
 
   if FLAGS.do_predict:
-    predict_examples = processor.get_test_examples(FLAGS.data_dir)
+    # sinh.luutruong added qnli task
+    if FLAGS.task_name == "qnli":
+        predict_examples = processor.get_examples_by_file_name(FLAGS.data_dir, FLAGS.test_file_name)
+    else:
+        predict_examples = processor.get_test_examples(FLAGS.data_dir)
     num_actual_predict_examples = len(predict_examples)
     if FLAGS.use_tpu:
       # TPU requires a fixed batch size for all batches, therefore the number
