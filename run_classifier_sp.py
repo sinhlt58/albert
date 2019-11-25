@@ -110,8 +110,9 @@ flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
 flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
-# sinh.luutruong added eps
+# sinh.luutruong added eps, poly_power
 flags.DEFINE_float("eps", 1e-5, "Epsilon for optimization")
+flags.DEFINE_float("poly_power", 1.0, "poly_power for learning rate")
 
 flags.DEFINE_float("num_train_epochs", 3.0,
                    "Total number of training epochs to perform.")
@@ -705,8 +706,8 @@ def create_model(albert_config, is_training, input_ids, input_mask, segment_ids,
 
     return (loss, per_example_loss, probabilities, predictions)
 
-# sinh.luutruong added eps
-def model_fn_builder(albert_config, num_labels, init_checkpoint, learning_rate, eps,
+# sinh.luutruong added eps, poly_power
+def model_fn_builder(albert_config, num_labels, init_checkpoint, learning_rate, eps, poly_power,
                      num_train_steps, num_warmup_steps, use_tpu,
                      use_one_hot_embeddings):
   """Returns `model_fn` closure for TPUEstimator."""
@@ -762,7 +763,7 @@ def model_fn_builder(albert_config, num_labels, init_checkpoint, learning_rate, 
     if mode == tf.estimator.ModeKeys.TRAIN:
       # sinh.luutruong added eps
       train_op = optimization.create_optimizer(
-          total_loss, learning_rate, eps, num_train_steps, num_warmup_steps, use_tpu)
+          total_loss, learning_rate, eps, num_train_steps, num_warmup_steps, use_tpu, poly_power=poly_power)
 
       output_spec = contrib_tpu.TPUEstimatorSpec(
           mode=mode,
@@ -950,6 +951,7 @@ def main(_):
       init_checkpoint=FLAGS.init_checkpoint,
       learning_rate=FLAGS.learning_rate,
       eps=FLAGS.eps, # sinh.luutruong added eps
+      poly_power=FLAGS.poly_power, # sinh.luutruong added poly_power
       num_train_steps=num_train_steps,
       num_warmup_steps=num_warmup_steps,
       use_tpu=FLAGS.use_tpu,
