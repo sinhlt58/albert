@@ -1066,8 +1066,8 @@ def main(_):
         drop_remainder=predict_drop_remainder)
 
     result = estimator.predict(input_fn=predict_input_fn)
-    tf.logging.info("probabilities: ", result["probabilities"])
-    tf.logging.info("predictions: ", result["predictions"])
+    probs = []
+    preds = []
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
     output_submit_file = os.path.join(FLAGS.output_dir, "submit_results.tsv")
@@ -1086,6 +1086,10 @@ def main(_):
         pred_writer.write(output_line)
 
         actual_label = label_list[int(prediction["predictions"])]
+
+        probs.append(probabilities)
+        preds.append(prediction["predictions"])
+
         sub_writer.write(
             six.ensure_str(example.guid) + "\t" + actual_label + "\n")
         num_written_lines += 1
