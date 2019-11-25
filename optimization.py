@@ -29,8 +29,8 @@ import tensorflow as tf
 from albert import lamb_optimizer
 from tensorflow.contrib import tpu as contrib_tpu
 
-
-def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu,
+# sinh.luutruong added eps
+def create_optimizer(loss, init_lr, eps, num_train_steps, num_warmup_steps, use_tpu,
                      optimizer="adamw", poly_power=1.0, start_warmup_step=0):
   """Creates an optimizer training op."""
   global_step = tf.train.get_or_create_global_step()
@@ -81,7 +81,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu,
         weight_decay_rate=0.01,
         beta_1=0.9,
         beta_2=0.999,
-        epsilon=1e-6,
+        epsilon=eps, # sinh.luutruong changed
         exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
   elif optimizer == "lamb":
     tf.logging.info("using lamb")
@@ -90,7 +90,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu,
         weight_decay_rate=0.01,
         beta_1=0.9,
         beta_2=0.999,
-        epsilon=1e-6,
+        epsilon=eps, # sinh.luutruong changed
         exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
   else:
     raise ValueError("Not supported optimizer: ", optimizer)
