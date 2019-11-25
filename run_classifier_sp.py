@@ -1066,6 +1066,7 @@ def main(_):
         drop_remainder=predict_drop_remainder)
 
     result = estimator.predict(input_fn=predict_input_fn)
+    print ("result: ", result)
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
     output_submit_file = os.path.join(FLAGS.output_dir, "submit_results.tsv")
