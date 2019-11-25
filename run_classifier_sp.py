@@ -1107,6 +1107,7 @@ def main(_):
     # sinh.luutruong start
     from sklearn.metrics  import classification_report
     import pandas as pd
+    import numpy as np
 
     print ("y: ", y)
     print ("preds: ", preds)
