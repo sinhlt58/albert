@@ -1093,6 +1093,10 @@ def main(_):
         sub_writer.write(
             six.ensure_str(example.guid) + "\t" + actual_label + "\n")
         num_written_lines += 1
+
+    print ("probs: ", probs)
+    print ("preds: ", preds)
+
     assert num_written_lines == num_actual_predict_examples
 
 
