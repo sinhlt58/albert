@@ -226,7 +226,7 @@ def model_fn_builder(albert_config, init_checkpoint, learning_rate,
     output_spec = None
     if mode == tf.estimator.ModeKeys.TRAIN:
       train_op = optimization.create_optimizer(
-          total_loss, learning_rate, num_train_steps, num_warmup_steps,
+          total_loss, learning_rate, 1e-6, num_train_steps, num_warmup_steps,
           use_tpu, optimizer, poly_power, start_warmup_step)
 
       output_spec = contrib_tpu.TPUEstimatorSpec(
