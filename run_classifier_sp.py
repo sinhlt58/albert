@@ -1039,6 +1039,13 @@ def main(_):
     else:
         predict_examples = processor.get_test_examples(FLAGS.data_dir)
     num_actual_predict_examples = len(predict_examples)
+
+    # sinh.luutruong start
+    y = []
+    for exp in predict_examples:
+      y.append(0 if exp.label == 'entailment' else 1)
+    # sinh.luutruong end
+
     if FLAGS.use_tpu:
       # TPU requires a fixed batch size for all batches, therefore the number
       # of examples must be a multiple of the batch size, or else examples
@@ -1066,8 +1073,11 @@ def main(_):
         drop_remainder=predict_drop_remainder)
 
     result = estimator.predict(input_fn=predict_input_fn)
+
+    # sinh.luutruong start
     probs = []
     preds = []
+    # sinh.luutruong end
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
     output_submit_file = os.path.join(FLAGS.output_dir, "submit_results.tsv")
@@ -1087,15 +1097,30 @@ def main(_):
 
         actual_label = label_list[int(prediction["predictions"])]
 
-        probs.append(probabilities)
+        probs.append(probabilities.tolist())
         preds.append(prediction["predictions"])
 
         sub_writer.write(
             six.ensure_str(example.guid) + "\t" + actual_label + "\n")
         num_written_lines += 1
 
+    # sinh.luutruong start
+    from sklearn.metrics  import classification_report, confusion_matrix
+    import pandas as pd
+
+    # confusion matrix
+    df_confusion = pd.crosstab(y, preds, rownames=['Actual'], colnames=['Predicted'], margins=True)
+    # classification_report
+    target_names = ["has_answer", "no_answer"]
+    report = classification_report(y, preds, target_names=target_names, output_dict=False)
+    report_dict = classification_report(y, preds, target_names=target_names, output_dict=True)
+
+    print (report)
+    print (df_confusion)
+
     print ("probs: ", probs)
     print ("preds: ", preds)
+    # sinh.luutruong end
 
     assert num_written_lines == num_actual_predict_examples
 
