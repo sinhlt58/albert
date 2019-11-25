@@ -1105,11 +1105,15 @@ def main(_):
         num_written_lines += 1
 
     # sinh.luutruong start
-    from sklearn.metrics  import classification_report, confusion_matrix
+    from sklearn.metrics  import classification_report
     import pandas as pd
 
+    print ("y: ", y)
+    print ("preds: ", preds)
+    print ("y len: ", len(y))
+    print ("preds len: ", len(preds))
     # confusion matrix
-    df_confusion = pd.crosstab(y, preds, rownames=['Actual'], colnames=['Predicted'], margins=True)
+    df_confusion = pd.crosstab(np.array(y), np.array(preds), rownames=['Actual'], colnames=['Predicted'], margins=True)
     # classification_report
     target_names = ["has_answer", "no_answer"]
     report = classification_report(y, preds, target_names=target_names, output_dict=False)
@@ -1119,7 +1123,7 @@ def main(_):
     print (df_confusion)
 
     print ("probs: ", probs)
-    print ("preds: ", preds)
+
     # sinh.luutruong end
 
     assert num_written_lines == num_actual_predict_examples
